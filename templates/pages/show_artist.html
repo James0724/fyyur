@@ -10,6 +10,10 @@ endblock %} {% block content %}
 			{% endfor %}
 		</div>
 		<p>
+			<i class="fas fa-check"></i> {% if artist.available %}Available{% else
+			%}Not Available{% endif %}
+		</p>
+		<p>
 			<i class="fas fa-globe-americas"></i> {{ artist.city }}, {{ artist.state
 			}}
 		</p>
@@ -46,7 +50,7 @@ endblock %} {% block content %}
 		{% endif %}
 	</div>
 	<div class="col-sm-6">
-		<img src="{{ artist.image_link }}" alt="Venue Image" />
+		<img src="{{ artist.image_link }}" alt="Artist Image" />
 	</div>
 </div>
 <section>

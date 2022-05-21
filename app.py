@@ -16,11 +16,11 @@ def format_datetime(value, format='medium'):
   if isinstance(value, str):
     date = dateutil.parser.parse(value)
   else:
-        date = value
+    date = value
   if format == 'full':
-      format="EEEE MMMM, d, y 'at' h:mma"
+    format="EEEE MMMM, d, y 'at' h:mma"
   elif format == 'medium':
-      format="EE MM, dd, y h:mma"
+    format="EE MM, dd, y h:mma"
   return babel.dates.format_datetime(date, format, locale='en')
 
 app.jinja_env.filters['datetime'] = format_datetime
@@ -64,23 +64,20 @@ def create_venue_form():
 
 @app.route('/venues/create', methods=['POST'])#insert data to the data base
 def create_venue_submission():
-
-    try:  
-        form = VenueForm(request.form)
-        form_venue = Venue()
-        form.populate_obj(form_venue)
-        db.session.add(form_venue)
-        db.session.commit()
-        flash('Venue ' + request.form['name'] + ' was successfully listed!')
-        return redirect(url_for('venues'))
-
-    except:
-        db.session.rollback()
-        flash('Venue ' + request.form['name'] + ' was not successfully listed!')
-        return redirect(url_for('venues'))
-
-    finally:
-       db.session.close()
+  form = VenueForm(request.form)
+  form_venue = Venue()
+  form.populate_obj(form_venue)
+  try:  
+    db.session.add(form_venue)
+    db.session.commit()
+    flash('Venue ' + request.form['name'] + ' was successfully listed!')
+    return redirect(url_for('venues'))
+  except:
+    db.session.rollback()
+    flash('Venue ' + request.form['name'] + ' was not successfully listed!')
+    return redirect(url_for('venues'))
+  finally:
+    db.session.close()
 
 # Update Venue
 @app.route('/venues/<int:venue_id>/edit', methods=['GET'])
@@ -93,20 +90,19 @@ def edit_venue_detail(venue_id):
 
 @app.route('/venues/<int:venue_id>/edit', methods=['POST'])
 def edit_venue_submission(venue_id):
-
+  venue = Venue.query.get(venue_id)
+  form = VenueForm(request.form)
+  form.populate_obj(venue)
   try:  
-      venue = Venue.query.get(venue_id)
-      form = VenueForm(request.form)
-      form.populate_obj(venue)
       db.session.add(venue)
       db.session.commit()
       flash('Venue ' + request.form['name'] + ' was successfully edited!')
-      return redirect(url_for('show_venue_detail', venue_id=venue_id))
+      return redirect(url_for('show_venue', venue_id=venue_id))
       
   except:
         db.session.rollback()
         flash('Venue ' + request.form['name'] + ' was not successfully listed!')
-        return redirect(url_for('show_venue_detail', venue_id=venue_id))
+        return redirect(url_for('show_venue', venue_id=venue_id))
 
   finally:
        db.session.close()
@@ -163,10 +159,10 @@ def create_artist_form():
 
 @app.route('/artists/create', methods=['POST'])
 def create_artist_submission():
-  try:
-    form = ArtistForm(request.form)
-    artist = Artist()
-    form.populate_obj(artist)
+  form = ArtistForm(request.form)
+  artist = Artist()
+  form.populate_obj(artist)
+  try:  
     db.session.add(artist)
     db.session.commit()
     flash('Artist ' + request.form['name'] + ' was successfully listed!')
@@ -192,20 +188,20 @@ def edit_artist(artist_id):
 
 @app.route('/artists/<int:artist_id>/edit', methods=['POST'])
 def edit_artist_submission(artist_id):
-
+  artist = Artist.query.get(artist_id)
+  form = ArtistForm(request.form)
+  form.populate_obj(artist)
   try:
-    artist = Artist.query.get(artist_id)
-    form = ArtistForm(request.form)
-    form.populate_obj(artist)
     db.session.add(artist)
     db.session.commit()
+    flash('Artist ' + request.form['name'] + ' was successfully edited!')
+    return redirect(url_for('show_artist', artist_id=artist_id))
   except:
     db.session.rollback()
-  
+    flash('Artist ' + request.form['name'] + ' was not successfully edited!')
+    return redirect(url_for('show_artist', artist_id=artist_id))
   finally:
     db.session.close()
-
-  return redirect(url_for('show_artist', artist_id=artist_id))
 
 # Delete Artist
 @app.route('/artists/<artist_id>/delete', methods=['GET'])
