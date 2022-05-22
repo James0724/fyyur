@@ -1,8 +1,11 @@
 #Imports 
+import sys
 import dateutil.parser
 import babel
 from flask import flash, redirect, render_template, request, url_for
+from sqlalchemy import desc
 from forms import *
+from helpers import upcoming_shows_count, update_upcoming_status
 from models import *
 
 # Models
@@ -14,11 +17,11 @@ from models import *
 #----------------------------------------------------------------------------------------------------------------
 def format_datetime(value, format='medium'):
   if isinstance(value, str):
-    date = dateutil.parser.parse(value)
+    date = dateutil.parser.parse(value)  
   else:
-    date = value
+    date = value 
   if format == 'full':
-    format="EEEE MMMM, d, y 'at' h:mma"
+    format="EEEE MMMM, d, y 'at' h:mma" 
   elif format == 'medium':
     format="EE MM, dd, y h:mma"
   return babel.dates.format_datetime(date, format, locale='en')
@@ -29,7 +32,9 @@ app.jinja_env.filters['datetime'] = format_datetime
 #----------------------------------------------------------------------------------------------------------------
 @app.route('/')
 def index():
-    return render_template('pages/home.html')
+  recent_artist = db.session.query(Artist).order_by(desc(Artist.created_at)).limit(10).all()
+  recent_venue = db.session.query(Venue).order_by(desc(Venue.created_at)).limit(10).all()
+  return render_template('pages/home.html', artists=recent_artist, areas=recent_venue )
 
 
 #  Venues
@@ -38,8 +43,9 @@ def index():
 # Get All Venue 
 @app.route('/venues/', methods=['GET'])
 def venues():
-  #num_upcoming_shows should be aggregated based on number of upcoming shows per venue.
-    return render_template('pages/venues.html', areas=Venue.query.all());
+  upcoming_shows_count()
+  arrange_order = db.session.query(Venue).order_by(desc(Venue.upcoming_shows_count)).all()
+  return render_template('pages/venues.html', areas=arrange_order);
 
 # Show Venue Details
 @app.route('/venues/<int:venue_id>', methods=['GET'])
@@ -47,6 +53,7 @@ def show_venue(venue_id):
   data = Venue.query.get(venue_id)
   if data == None:
     return render_template('errors/404.html')
+  update_upcoming_status(data=data)#update function for upcoming and past shows
   return render_template('pages/show_venue.html', venue=data)
 
 # Search Venue
@@ -71,10 +78,11 @@ def create_venue_submission():
     db.session.add(form_venue)
     db.session.commit()
     flash('Venue ' + request.form['name'] + ' was successfully listed!')
-    return redirect(url_for('venues'))
+    return redirect(url_for('index'))
   except:
     db.session.rollback()
-    flash('Venue ' + request.form['name'] + ' was not successfully listed!')
+    print(sys.exc_info())
+    flash('Venue ' + request.form['name'] + ' was not listed!')
     return redirect(url_for('venues'))
   finally:
     db.session.close()
@@ -146,8 +154,12 @@ def search_artists():
 @app.route('/artists/<int:artist_id>')
 def show_artist(artist_id):
   data = Artist.query.get(artist_id)
+  update_upcoming_status(data=data)#update function for upcoming and past shows
+  
+  
   if data == None:
     return render_template('errors/404.html')
+  
   return render_template('pages/show_artist.html', artist=data)
 
 
@@ -166,7 +178,7 @@ def create_artist_submission():
     db.session.add(artist)
     db.session.commit()
     flash('Artist ' + request.form['name'] + ' was successfully listed!')
-    return redirect(url_for('artists'))
+    return redirect(url_for('index'))
 
   except Exception as e:
     db.session.rollback()
@@ -248,25 +260,31 @@ def create_shows_submission():
   show = Show()
   form.populate_obj(show)
   artist_id = request.form['artist_id']
-  artist_avaibality = Artist.query.get(artist_id).available
-
-  try:   
-    if artist_avaibality == True:
-      db.session.add(show)
-      db.session.commit()
-      flash(request.form['name'] + ' was successfuly added!')
-    else:
-      flash(request.form['name'] + ' was not successfuly added artist is unavailable or fully booked!')
-      return render_template('forms/new_show.html', form=form)
-    return redirect(url_for('shows'))
-
-  except:
-    if artist_avaibality == False:
-      flash(request.form['name'] + ' was not successfuly added! artist is unavailable')
-    db.session.rollback()
+  venue_id = request.form['venue_id']
+  use_artist_id = Artist.query.get(artist_id)
+  use_venue_id = Venue.query.get(venue_id)
+  
+  if use_artist_id == None or use_venue_id == None:
+    flash('No artist or venue with the input id')
     return render_template('forms/new_show.html', form=form)
-  finally:
-    db.session.close()
+  else:
+    try:
+      artist_avaibality = Artist.query.get(artist_id).available 
+      if artist_avaibality == True:
+        db.session.add(show)
+        db.session.commit()
+        flash(request.form['name'] + ' was successfuly added!')
+      else:
+        flash(request.form['name'] + ' was not added artist is unavailable or fully booked!')
+        return render_template('forms/new_show.html', form=form)
+      return redirect(url_for('shows'))
+    except:
+      if artist_avaibality == False:
+        flash(request.form['name'] + ' was not successfuly added! artist is unavailable')
+      
+      return render_template('forms/new_show.html', form=form)
+    finally:
+      db.session.close()
     
 # Show Details
 @app.route('/shows/<int:show_id>')

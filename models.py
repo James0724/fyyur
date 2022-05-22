@@ -1,3 +1,4 @@
+from email.policy import default
 from flask_sqlalchemy import SQLAlchemy
 from flask import Flask
 import logging
@@ -31,6 +32,9 @@ class Venue(db.Model):
     website = db.Column(db.String(200))
     seeking_description = db.Column(db.String(300))
     shows = db.relationship('Show', backref='venue', lazy=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+    upcoming_shows_count = db.Column(db.Integer,)
+    past_shows_count = db.Column(db.Integer,)
     db.UniqueConstraint(name)
 
     def __repr__(self):
@@ -55,6 +59,9 @@ class Artist(db.Model):
     seeking_description = db.Column(db.String(300))
     shows = db.relationship('Show', backref='artist', lazy=True)
     available = db.Column(db.Boolean, default=False, nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+    upcoming_shows_count = db.Column(db.Integer,)
+    past_shows_count = db.Column(db.Integer,)
     db.UniqueConstraint(name)
 
     def __repr__(self):
@@ -67,10 +74,10 @@ class Show(db.Model):
   id = db.Column(db.Integer, primary_key=True)
   name = db.Column(db.String)
   start_time = db.Column(db.DateTime, nullable=False)
-  upcoming_shows =db.Column(db.Boolean, default=True)#to remain true as long as start date & time are in future 
-  past_shows = db.Column(db.Boolean, default=False) #to be updated to True when start date & time are past 
+  upcoming_status =db.Column(db.Boolean, default=True)
   artist_id = db.Column(db.Integer, db.ForeignKey('Artist.id'), nullable=False)
   venue_id = db.Column(db.Integer, db.ForeignKey('Venue.id'), nullable=False)
+  
   
   def __repr__(self):
       return f'<Show {self.name}, {self.venue.name}, {self.artist.name}>'

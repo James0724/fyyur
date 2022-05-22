@@ -35,4 +35,39 @@ content %}
 		/>
 	</div>
 </div>
+<div class="row">
+	<div class="col-sm-6">
+		<ul class="items">
+			<h2>Recently added artist</h2>
+			{% for artist in artists %}
+
+			<li>
+				<a href="/artists/{{ artist.id }}">
+					<i class="fas fa-users"></i>
+					<div class="item">
+						<h5>{{ artist.name }}</h5>
+					</div>
+				</a>
+			</li>
+			{% endfor %}
+		</ul>
+	</div>
+	<div class="col-sm-6">
+		<ul class="items">
+			<h2>Recently added Venue</h2>
+			{% for area in areas %}
+
+			<h3>{{ area.city }}, {{ area.state }}</h3>
+			<li>
+				<a href="/venues/{{ area.id }}">
+					<i class="fas fa-music"></i>
+					<div class="item">
+						<h5>{{ area.name }}</h5>
+					</div>
+				</a>
+			</li>
+			{% endfor %}
+		</ul>
+	</div>
+</div>
 {% endblock %}
