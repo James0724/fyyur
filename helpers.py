@@ -5,7 +5,7 @@ def update_upcoming_status(data):
     for i in range(len(shows)): #grabbing the single show to work with storstart_time=shows[i].start_time 
       start_time=shows[i].start_time
       today = datetime.today() 
-      print(today)
+      
       show = shows[i].id
       if start_time < today:
         print('past') #upcoming_status should be set to false

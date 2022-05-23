@@ -305,6 +305,10 @@ def not_found_error(error):
 def server_error(error):
     return render_template('errors/500.html'), 500
 
+#Launch
+#----------------------------------------------------------------------------------------------------------------
+if __name__ == '__main__':
+    app.run()
 
 
 
