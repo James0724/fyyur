@@ -72,20 +72,27 @@ def create_venue_form():
 @app.route('/venues/create', methods=['POST'])#insert data to the data base
 def create_venue_submission():
   form = VenueForm(request.form)
-  form_venue = Venue()
-  form.populate_obj(form_venue)
-  try:  
-    db.session.add(form_venue)
-    db.session.commit()
-    flash('Venue ' + request.form['name'] + ' was successfully listed!')
-    return redirect(url_for('index'))
-  except:
-    db.session.rollback()
-    print(sys.exc_info())
-    flash('Venue ' + request.form['name'] + ' was not listed!')
-    return redirect(url_for('venues'))
-  finally:
-    db.session.close()
+  if form.validate_on_submit():
+    form_venue = Venue()
+    form.populate_obj(form_venue)
+    try:  
+      db.session.add(form_venue)
+      db.session.commit()
+      flash('Venue ' + request.form['name'] + ' was successfully listed!')
+      return redirect(url_for('index'))
+    except:
+      db.session.rollback()
+      print(sys.exc_info())
+      flash('Venue ' + request.form['name'] + ' was not listed!')
+      return render_template('forms/new_venue.html', form=form)
+    finally:
+      db.session.close()
+  else:
+    for field, message in form.errors.items():
+      flash(field + ' - ' + str(message))
+    return render_template('forms/new_venue.html', form=form)
+
+  
 
 # Update Venue
 @app.route('/venues/<int:venue_id>/edit', methods=['GET'])
@@ -100,20 +107,25 @@ def edit_venue_detail(venue_id):
 def edit_venue_submission(venue_id):
   venue = Venue.query.get(venue_id)
   form = VenueForm(request.form)
-  form.populate_obj(venue)
-  try:  
-      db.session.add(venue)
-      db.session.commit()
-      flash('Venue ' + request.form['name'] + ' was successfully edited!')
-      return redirect(url_for('show_venue', venue_id=venue_id))
-      
-  except:
-        db.session.rollback()
-        flash('Venue ' + request.form['name'] + ' was not successfully listed!')
+  if form.validate_on_submit():
+    form.populate_obj(venue)
+    try:  
+        db.session.add(venue)
+        db.session.commit()
+        flash('Venue ' + request.form['name'] + ' was successfully edited!')
         return redirect(url_for('show_venue', venue_id=venue_id))
+        
+    except:
+          db.session.rollback()
+          flash('Venue ' + request.form['name'] + ' was not successfully listed!')
+          return render_template('forms/edit_venue.html', form=form, venue=venue)
 
-  finally:
-       db.session.close()
+    finally:
+        db.session.close()
+  else:
+    for field, message in form.errors.items():
+      flash(field + ' - ' + str(message))
+    return render_template('forms/edit_venue.html', form=form, venue=venue)
 
 # Delete Venue
 @app.route('/venues/<venue_id>/delete', methods=['GET'])
@@ -155,13 +167,10 @@ def search_artists():
 def show_artist(artist_id):
   data = Artist.query.get(artist_id)
   update_upcoming_status(data=data)#update function for upcoming and past shows
-  
-  
   if data == None:
     return render_template('errors/404.html')
   
   return render_template('pages/show_artist.html', artist=data)
-
 
 # Create Artist
 @app.route('/artists/create', methods=['GET'])
@@ -172,22 +181,27 @@ def create_artist_form():
 @app.route('/artists/create', methods=['POST'])
 def create_artist_submission():
   form = ArtistForm(request.form)
-  artist = Artist()
-  form.populate_obj(artist)
-  try:  
-    db.session.add(artist)
-    db.session.commit()
-    flash('Artist ' + request.form['name'] + ' was successfully listed!')
-    return redirect(url_for('index'))
+  if form.validate_on_submit():
+    artist = Artist()
+    form.populate_obj(artist)
+    try:  
+      db.session.add(artist)
+      db.session.commit()
+      flash('Artist ' + request.form['name'] + ' was successfully listed!')
+      return redirect(url_for('index'))
 
-  except Exception as e:
-    db.session.rollback()
-    flash('Artist was not succesfully added!')
-    print(str(repr(e)))
-    return redirect(url_for('artists'))
+    except Exception as e:
+      db.session.rollback()
+      flash('Artist was not succesfully added!')
+      print(str(repr(e)))
+      return render_template('forms/new_artist.html', form=form)
 
-  finally:
-    db.session.close()
+    finally:
+      db.session.close()
+  else:
+    for field, message in form.errors.items():
+      flash(field + ' - ' + str(message))
+    return render_template('forms/new_artist.html', form=form)
 
 # Update Artist 
 @app.route('/artists/<int:artist_id>/edit', methods=['GET'])
@@ -202,18 +216,23 @@ def edit_artist(artist_id):
 def edit_artist_submission(artist_id):
   artist = Artist.query.get(artist_id)
   form = ArtistForm(request.form)
-  form.populate_obj(artist)
-  try:
-    db.session.add(artist)
-    db.session.commit()
-    flash('Artist ' + request.form['name'] + ' was successfully edited!')
-    return redirect(url_for('show_artist', artist_id=artist_id))
-  except:
-    db.session.rollback()
-    flash('Artist ' + request.form['name'] + ' was not successfully edited!')
-    return redirect(url_for('show_artist', artist_id=artist_id))
-  finally:
-    db.session.close()
+  if form.validate_on_submit(): 
+    form.populate_obj(artist)
+    try:
+      db.session.add(artist)
+      db.session.commit()
+      flash('Artist ' + request.form['name'] + ' was successfully edited!')
+      return redirect(url_for('show_artist', artist_id=artist_id))
+    except:
+      db.session.rollback()
+      flash('Artist ' + request.form['name'] + ' was not successfully edited!')
+      return render_template('forms/edit_artist.html', form=form, artist=artist)
+    finally:
+      db.session.close()
+  else:
+    for field, message in form.errors.items():
+      flash(field + ' - ' + str(message))
+    return render_template('forms/edit_artist.html', form=form, artist=artist)
 
 # Delete Artist
 @app.route('/artists/<artist_id>/delete', methods=['GET'])
@@ -257,34 +276,39 @@ def create_shows():
 @app.route('/shows/create', methods=['POST'])
 def create_shows_submission():
   form = ShowForm(request.form)
-  show = Show()
-  form.populate_obj(show)
-  artist_id = request.form['artist_id']
-  venue_id = request.form['venue_id']
-  use_artist_id = Artist.query.get(artist_id)
-  use_venue_id = Venue.query.get(venue_id)
-  
-  if use_artist_id == None or use_venue_id == None:
-    flash('No artist or venue with the input id')
-    return render_template('forms/new_show.html', form=form)
-  else:
-    try:
-      artist_avaibality = Artist.query.get(artist_id).available 
-      if artist_avaibality == True:
-        db.session.add(show)
-        db.session.commit()
-        flash(request.form['name'] + ' was successfuly added!')
-      else:
-        flash(request.form['name'] + ' was not added artist is unavailable or fully booked!')
-        return render_template('forms/new_show.html', form=form)
-      return redirect(url_for('shows'))
-    except:
-      if artist_avaibality == False:
-        flash(request.form['name'] + ' was not successfuly added! artist is unavailable')
-      
+  if form.validate_on_submit():
+    show = Show()
+    form.populate_obj(show)
+    artist_id = request.form['artist_id']
+    venue_id = request.form['venue_id']
+    use_artist_id = Artist.query.get(artist_id)
+    use_venue_id = Venue.query.get(venue_id)
+    
+    if use_artist_id == None or use_venue_id == None:
+      flash('No artist or venue with the input id')
       return render_template('forms/new_show.html', form=form)
-    finally:
-      db.session.close()
+    else:
+      try:
+        artist_avaibality = Artist.query.get(artist_id).available 
+        if artist_avaibality == True:
+          db.session.add(show)
+          db.session.commit()
+          flash(request.form['name'] + ' was successfuly added!')
+        else:
+          flash(request.form['name'] + ' was not added artist is unavailable or fully booked!')
+          return render_template('forms/new_show.html', form=form)
+        return redirect(url_for('shows'))
+      except:
+        if artist_avaibality == False:
+          flash(request.form['name'] + ' was not successfuly added! artist is unavailable')
+        
+        return render_template('forms/new_show.html', form=form)
+      finally:
+        db.session.close()
+  else:
+    for field, message in form.errors.items():
+      flash(field + ' - ' + str(message))
+    return render_template('forms/new_show.html', form=form)
     
 # Show Details
 @app.route('/shows/<int:show_id>')
