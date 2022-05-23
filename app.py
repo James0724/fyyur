@@ -61,7 +61,7 @@ def show_venue(venue_id):
 def search_venues():
   search = request.form.get('search_term')
   results = Venue.query.filter(Venue.name.ilike('%'+search+'%')).all()
-  return render_template('pages/search_artists.html', search=search, results=results )
+  return render_template('pages/search_venues.html', search=search, results=results )
 
 # Create Venue
 @app.route('/venues/create', methods=['GET'])#dispay the venueForm to the user
